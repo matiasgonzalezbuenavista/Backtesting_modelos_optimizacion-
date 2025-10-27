@@ -28,39 +28,36 @@ st.markdown("---")
 
 # Funciones auxiliares
 @st.cache_data
-def load_data(uploaded_file):
-    """Cargar y procesar los datos desde el archivo cargado."""
-    if uploaded_file is None:
-        return None, None, None
-
-    try:
-        # La magia de Streamlit: lee el buffer del archivo cargado
-        data = pd.read_excel(uploaded_file, index_col=0, parse_dates=True)
-        data = data.sort_index(ascending=True)
-        
-        # Renombrar columnas (asumiendo que las columnas originales están presentes)
-        nombres = {
-            'SPX Index': 'USA', 'MXEUG Index': 'Europa equities', 'UKX Index': 'UK', 
-            'MXJP Index': 'Japon', 'MXAPJ Index': 'Asia', 'MXLA Index': 'Latam', 
-            'LF98TRUU Index': 'US HY', 'LUACTRUU Index': 'US IG', 'LBEATRUH Index': 'Europa bonds', 
-            'BSELTRUU Index': 'Latam corp', 'BSSUTRUU Index': 'Emerging sov', 'CABS Index': 'ABS', 
-            'BCOMTR Index': 'Commodities', 'GLD US EQUITY': 'Oro', 'MXWD Index': 'World equities'
-        }
-        data = data.rename(columns=nombres)
-        
+def load_data():
+	"""Cargar y procesar los datos"""
+	try:
+		# Cargar datos principales
+		data = pd.read_excel('/Users/matiasgonzalez/Desktop/Backtesting/bbdd seleccion portafolio.xlsx', index_col=0, parse_dates=True)
+		data = data.sort_index(ascending=True)
+		
+		# Renombrar columnas
+		nombres = {
+			'SPX Index': 'USA', 'MXEUG Index': 'Europa equities', 'UKX Index': 'UK', 
+			'MXJP Index': 'Japon', 'MXAPJ Index': 'Asia', 'MXLA Index': 'Latam', 
+			'LF98TRUU Index': 'US HY', 'LUACTRUU Index': 'US IG', 'LBEATRUH Index': 'Europa bonds', 
+			'BSELTRUU Index': 'Latam corp', 'BSSUTRUU Index': 'Emerging sov', 'CABS Index': 'ABS', 
+			'BCOMTR Index': 'Commodities', 'GLD US EQUITY': 'Oro', 'MXWD Index': 'World equities'
+		}
+		data = data.rename(columns=nombres)
+		
 		# Calcular retornos
-        returns = data.pct_change().dropna(how="all")
-        returns_modelos = returns.iloc[:, 0:14]  # Primeras 14 columnas para modelos 
-        
-        return data, returns, returns_modelos
-        
-    except Exception as e:
-        st.error(f"Error al procesar los datos. Asegúrate de que el archivo sea un Excel válido y contenga las columnas de índices correctas (ej. 'SPX Index', 'MXEUG Index', etc.).")
-        st.exception(e)
-        return None, None, None
+		returns = data.pct_change().dropna(how="all")
+		returns_modelos = returns.iloc[:, 0:14]  # Primeras 14 columnas para modelos
+		
+		return data, returns, returns_modelos
+	except Exception as e:
+		st.error(f"Error al cargar los datos: {str(e)}")
+		return None, None, None
+
+year = 10
 
 #Benchmark Portfolio Backtest conservador 
-def backtest_portafolio_bvc(returns, lookback=(365*5), rebalance_freq='QE'):
+def backtest_portafolio_bvc(returns, lookback=(365*year), rebalance_freq='QE'):
     portfolio_returns = []
     weights = None
     historical_weights = []
@@ -88,7 +85,7 @@ def backtest_portafolio_bvc(returns, lookback=(365*5), rebalance_freq='QE'):
     return pd.Series(portfolio_returns, index=returns.index[lookback:]), pd.DataFrame(historical_weights, index=returns.index[lookback:], columns=returns.columns) 
 
 #Benchmark Portfolio Backtest conservador 
-def backtest_benchmark_conservador(returns, lookback=(365*5), rebalance_freq='QE'):
+def backtest_benchmark_conservador(returns, lookback=(365*year), rebalance_freq='QE'):
     portfolio_returns = []
     weights = None
     historical_weights = []
@@ -119,7 +116,7 @@ def backtest_benchmark_conservador(returns, lookback=(365*5), rebalance_freq='QE
     return pd.Series(portfolio_returns, index=returns.index[lookback:]), pd.DataFrame(historical_weights, index=returns.index[lookback:], columns=returns.columns) 
 
 #Benchmark Portfolio Backtest agresivo 
-def backtest_benchmark_agresivo(returns, lookback=(365*5), rebalance_freq='QE'):
+def backtest_benchmark_agresivo(returns, lookback=(365*year), rebalance_freq='QE'):
     portfolio_returns = []
     weights = None
     historical_weights = []
@@ -237,7 +234,7 @@ def calculate_risk_parity_weights(returns):
     return result.x
 
 # Backtesting the strategy
-def backtest_risk_parity(returns, lookback=(365*5), rebalance_freq='QE'):
+def backtest_risk_parity(returns, lookback=(365*year), rebalance_freq='QE'):
     historical_weights = []
     portfolio_returns = []
     weights = None
@@ -269,7 +266,7 @@ def backtest_risk_parity(returns, lookback=(365*5), rebalance_freq='QE'):
 
 from datetime import timedelta
 #Equal weight strategy
-def backtest_equal_weigth(returns, lookback=(365*5), rebalance_freq='QE'):
+def backtest_equal_weigth(returns, lookback=(365*year), rebalance_freq='QE'):
     portfolio_returns = []
     weights = None
     n_assets = returns.shape[1]
@@ -343,7 +340,7 @@ def calculate_mvo_weights_lim_cvar_max20(returns):
     else:
         raise ValueError("Optimization failed: " + res.message)
     
-def backtest_mvo_lim_cvar_max20(returns, lookback=(365*5), rebalance_freq='QE'):
+def backtest_mvo_lim_cvar_max20(returns, lookback=(365*year), rebalance_freq='QE'):
     portfolio_returns = []
     historical_weights = []
     weights = None
@@ -408,7 +405,7 @@ def calculate_maxreturn_weight(returns):
     else:
         raise ValueError("Optimization failed: " + res.message)
     
-def backtest_maxreturn_weight(returns, lookback=(365*5), rebalance_freq='QE'):
+def backtest_maxreturn_weight(returns, lookback=(365*year), rebalance_freq='QE'):
     portfolio_returns = []
     historical_weights = []
     weights = None
@@ -484,7 +481,7 @@ def calculate_maxreturn_sdres8_weight(returns):
     else:
         raise ValueError("Optimization failed: " + res.message)
 
-def backtest_maxreturn_sdres8_weight(returns, lookback=(365*5), rebalance_freq='QE'):
+def backtest_maxreturn_sdres8_weight(returns, lookback=(365*year), rebalance_freq='QE'):
     portfolio_returns = []
     historical_weights = []
     weights = None
@@ -549,7 +546,7 @@ def calculate_min_var_weight(returns):
     else:
         raise ValueError("Optimization failed: " + res.message)
     
-def backtest_min_var_weight(returns, lookback=(365*5), rebalance_freq='QE'):
+def backtest_min_var_weight(returns, lookback=(365*year), rebalance_freq='QE'):
     portfolio_returns = []
     historical_weights = []
     weights = None
@@ -879,21 +876,14 @@ def create_asset_metrics_chart(metrics_df, metric_name):
 
 # Interfaz principal
 def main():
-# Columna de carga de archivos en el sidebar
-    st.sidebar.header("📁 Carga de Datos")
-    uploaded_file = st.sidebar.file_uploader(
-        "Sube tu archivo Excel de Precios (columna 1: Fecha, Fila 1: Tickers/Nombres)",
-        type=['xlsx']
-    )
-    
-    data, returns, returns_modelos = load_data(uploaded_file)
+    # Cargar datos
+    data, returns, returns_modelos = load_data()
     
     if data is None:
-        st.info("⬆️ Por favor, carga un archivo Excel para comenzar el análisis.")
+        st.error("No se pudieron cargar los datos. Por favor, verifica la ruta del archivo.")
         return
     
     # Sidebar para navegación
-    st.sidebar.markdown("---")
     st.sidebar.title("Navegación")
     pages = ["Resumen Ejecutivo", "Análisis de Riesgo-Retorno", "Composición de Portafolios", "Métricas Detalladas", "Análisis de Activos"]
     selected_page = st.sidebar.selectbox("Selecciona una sección:", pages)
