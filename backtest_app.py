@@ -1214,11 +1214,6 @@ def main():
         fig_corr = create_asset_correlation_heatmap(returns)
         st.plotly_chart(fig_corr, use_container_width=True)
         
-        # Tabla de correlaciones
-        st.subheader("Tabla de Correlaciones")
-        correlation_matrix = returns.corr()
-        correlation_formatted = correlation_matrix.round(3)
-        st.dataframe(correlation_formatted, use_container_width=True)
 
     # Footer
     st.markdown("---")
